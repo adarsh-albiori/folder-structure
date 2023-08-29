@@ -1,7 +1,10 @@
 <template>
   <div class="tree-item">
     <div>
-      <div class="d-flex justify-left align-left">
+      <div
+        class="d-flex justify-left align-left"
+        v-on:mouseleave="mouseleave()"
+      >
         <v-icon v-if="props.item.title">
           {{
             props.item.type === "file"
@@ -13,7 +16,7 @@
           {{ props.item.title }}
         </div>
 
-        <div class="d-flex" v-if="mutations" v-on:mouseleave="mouseleave()">
+        <div class="d-flex" v-if="mutations">
           <v-btn
             v-if="item.type === 'folder'"
             icon="mdi-plus-circle-outline"

@@ -11,7 +11,7 @@
             <v-text-field
               :rules="fieldRules"
               density="compact"
-              v-model="EditItem.title"
+              v-model="EditItem.value"
               class="mt-2"
               variant="outlined"
               label="Folder Name"
@@ -53,13 +53,14 @@
 <script setup>
 import { ref, reactive, defineProps } from "vue";
 import TreeStyle from "./TreeStyle.vue";
+import axios from "axios";
 
-defineProps(["nodes", "title"]);
+defineProps(["children", "value"]);
 const card = ref(false);
 const ind = ref(null);
 const isValid = ref(null);
 
-let Data = reactive([]);
+let Data = ref([]);
 let fieldRules = reactive([
   (value) => {
     if (value) return true;
@@ -67,24 +68,27 @@ let fieldRules = reactive([
   },
 ]);
 const EditItem = ref({
-  id: Date.now() + Math.random(),
-  title: "",
-  type: "folder",
-  nodes: [],
+  value: "",
 });
 const DefaultItem = {
-  id: Date.now() + Math.random(),
-  title: "",
-  type: "folder",
-  nodes: [],
+  value: "",
 };
 function handleIndex(i) {
   ind.value = i;
 }
-function save() {
-  Data.push({ ...EditItem.value });
+async function save() {
+  const apiUrl = "https://folder-structure-api.onrender.com/initialize-root";
+  const requestData = { ...EditItem.value };
   EditItem.value = { ...DefaultItem };
   card.value = false;
+  try {
+    const response = await axios.post(apiUrl, requestData);
+    Data.value = response.data;
+    return response.data;
+  } catch (error) {
+    console.error("Error initializing root folder:", error);
+    throw new Error("Failed to initialize root folder.");
+  }
 }
 
 function close() {
@@ -92,28 +96,35 @@ function close() {
 }
 
 function handleSave(data) {
-  data.data.nodes.push({ ...data.item });
+  data.data.children.push({ ...data.item });
 }
 
 function handleRemove(id) {
-  deleteNodeRecursively(Data, id);
+  deleteChildRecursively(Data.value, id);
 }
-function deleteNodeRecursively(nodes, targetNode) {
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if (node === targetNode) {
-      nodes.splice(i, 1);
+async function deleteChildRecursively(children, targetChild) {
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (child === targetChild) {
+      try {
+        const response = await axios.delete(
+          `https://folder-structure-api.onrender.com/${child._id}`
+        );
+        console.log("Deleted successfully:", response.data);
+      } catch (error) {
+        console.error("Error deleting data:", error);
+      }
       return;
     }
-    if (node.nodes) {
-      deleteNodeRecursively(node.nodes, targetNode);
+    if (child.children) {
+      deleteChildRecursively(child.children, targetChild);
     }
   }
 }
 
 function addFolder() {
   card.value = true;
-  EditItem.value.nodes = [];
+  EditItem.value.children = [];
 }
 </script>
 <style scoped>
@@ -125,33 +136,33 @@ function addFolder() {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-
-  &:before {
-    position: absolute;
-    top: 15px;
-    left: 0;
-    width: 10px;
-    height: 2px;
-    margin: auto;
-    content: "";
-    background-color: #000000;
-  }
-
-  &:after {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 2px;
-    height: 100%;
-    content: "";
-    background-color: #666;
-  }
-
-  &:last-child:after {
-    height: 15px;
-  }
 }
+.tree-item:before {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  width: 10px;
+  height: 2px;
+  margin: auto;
+  content: "";
+  background-color: #000000;
+}
+
+.tree-item:after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  content: "";
+  background-color: #666;
+}
+
+.tree-item:last-child:after {
+  height: 15px;
+}
+
 .tree-item {
   margin-left: 40px;
 }

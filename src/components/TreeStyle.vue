@@ -5,7 +5,7 @@
         class="d-flex justify-left align-left"
         v-on:mouseleave="mouseleave()"
       >
-        <v-icon v-if="props.item.title">
+        <v-icon v-if="props.item.value">
           {{
             props.item.type === "file"
               ? "mdi-file-outline"
@@ -13,7 +13,7 @@
           }}</v-icon
         >
         <div v-on:mouseover="mouseover()">
-          {{ props.item.title }}
+          {{ props.item.value }}
         </div>
 
         <div class="d-flex" v-if="mutations">
@@ -196,33 +196,33 @@ function mouseleave() {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-
-  &:before {
-    position: absolute;
-    top: 15px;
-    left: 0;
-    width: 10px;
-    height: 2px;
-    margin: auto;
-    content: "";
-    background-color: #000000;
-  }
-
-  &:after {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 2px;
-    height: 100%;
-    content: "";
-    background-color: #666;
-  }
-
-  &:last-child:after {
-    height: 15px;
-  }
 }
+.tree-item:before {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  width: 10px;
+  height: 2px;
+  margin: auto;
+  content: "";
+  background-color: #000000;
+}
+
+.tree-item:after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  content: "";
+  background-color: #666;
+}
+
+.tree-item:last-child:after {
+  height: 15px;
+}
+
 .tree-item {
   margin-left: 40px;
 }

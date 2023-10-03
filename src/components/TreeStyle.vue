@@ -55,7 +55,7 @@
                 <v-text-field
                   :rules="fieldRules"
                   density="compact"
-                  v-model="EditItem.title"
+                  v-model="EditItem.value"
                   class="mt-2"
                   variant="outlined"
                   label="Folder Name"
@@ -85,12 +85,12 @@
     </div>
 
     <div>
-      <template v-if="props.item.nodes?.length">
+      <template v-if="props.item.children?.length">
         <TreeStyle
           class="tree"
-          v-for="(node, nodeIndex) in props.item.nodes"
+          v-for="(child, nodeIndex) in props.item.children"
           :key="nodeIndex"
-          :item="node"
+          :item="child"
           @finalData="handleSave"
           @delete="handleRemove"
         />
@@ -100,6 +100,8 @@
 </template>
 <script setup>
 import { ref, reactive, defineProps, defineEmits } from "vue";
+import axios from "axios";
+
 const show = ref(false);
 const buttons = ref(false);
 const mutations = ref(false);
@@ -116,14 +118,14 @@ let fieldRules = reactive([
   },
 ]);
 const EditItem = ref({
-  id: Date.now() + Math.random(),
-  title: "",
+  value: "",
   type: null,
+  parent: null,
 });
 const DefaultItem = {
-  id: Date.now() + Math.random(),
-  title: "",
+  value: "",
   type: null,
+  parent: null,
 };
 function showFileBox() {
   type.value = "file";
@@ -139,22 +141,30 @@ function handleSave(data) {
   emits("finalData", data);
 }
 function handleRemove(data) {
-  deleteNodeRecursively(item.value.nodes, data);
+  deleteNodeRecursively(item.value.children, data);
 }
-function deleteNodeRecursively(nodes, targetNode) {
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if (node === targetNode) {
-      nodes.splice(i, 1);
-      return;
+async function deleteNodeRecursively(children, targetChild) {
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (child === targetChild) {
+      try {
+        const response = await axios.delete(
+          `https://folder-structure-api.onrender.com/${child._id}`
+        );
+        children.splice(i, 1);
+        return response.data;
+      } catch (error) {
+        throw new Error("Error deleting data:", error);
+      }
     }
-    if (node.nodes) {
-      deleteNodeRecursively(node.nodes, targetNode);
+    if (child.children) {
+      deleteNodeRecursively(child.children, targetChild);
     }
   }
-  emits("delete", targetNode);
+  emits("delete", targetChild);
 }
 function save(val) {
+  EditItem.value.parent = val._id;
   if (type.value === "file") {
     EditItem.value.type = "file";
     emits("finalData", { data: val, item: { ...EditItem.value } });
@@ -162,7 +172,7 @@ function save(val) {
     show.value = false;
   } else if (type.value === "folder") {
     EditItem.value.type = "folder";
-    EditItem.value.nodes = [];
+    EditItem.value.children = [];
     emits("finalData", { data: val, item: { ...EditItem.value } });
     EditItem.value = { ...DefaultItem };
     show.value = false;
